@@ -56,7 +56,8 @@ def load_session_total():
 
 def save_session_total(total):
     with open(SESSION_FILE, 'w') as f:
-        json.dump({'total': total}, f)
+        json.dump({'total': float(total)}, f)  # ✅ Konversi ke float dulu
+
 
 def write_log(entry):
     with open(LOG_FILE, 'a') as f:
