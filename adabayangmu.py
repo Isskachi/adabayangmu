@@ -5,7 +5,7 @@ import requests
 from dotenv import load_dotenv
 import os
 import json
-from colorama import init, Fore, Style
+from colorama import init, Fore
 
 init(autoreset=True)
 load_dotenv()
@@ -19,7 +19,7 @@ WALLET2 = os.getenv('WALLET2')
 WALLET3 = os.getenv('WALLET3')
 
 if not all([TELEGRAM_TOKEN, CHAT_ID, RPC_URL, WALLET1]):
-    print("❌ Error: .env tidak lengkap!")
+    print(Fore.RED + "❌ Error: .env tidak lengkap!")
     exit()
 
 WATCH_WALLETS = [
@@ -32,14 +32,14 @@ WATCH_WALLETS = [w for w in WATCH_WALLETS if w['address']]
 # === RPC CONNECT ===
 web3 = Web3(Web3.HTTPProvider(RPC_URL))
 if not web3.is_connected():
-    print("❌ Gagal konek ke RPC ITA.")
+    print(Fore.RED + "❌ Gagal konek ke RPC ITA.")
     exit()
 
-print(f"🎯 Memantau {len(WATCH_WALLETS)} wallet:")
+print(f"{Fore.CYAN}🎯 Memantau {len(WATCH_WALLETS)} wallet:")
 for wallet in WATCH_WALLETS:
     print(f"   • {wallet['name']}: {wallet['address'][:10]}...{wallet['address'][-6:]}")
 
-print("🚀 Monitoring dimulai...\n")
+print(Fore.CYAN + "🚀 Monitoring dimulai...\n")
 
 # === VARIABEL & FILE ===
 LOG_FILE = "ita_log.txt"
@@ -51,13 +51,12 @@ def load_session_total():
             with open(SESSION_FILE, 'r') as f:
                 return float(json.load(f).get('total', 0))
         except:
-            return 0
-    return 0
+            return 0.0
+    return 0.0
 
 def save_session_total(total):
     with open(SESSION_FILE, 'w') as f:
-        json.dump({'total': float(total)}, f)  # ✅ Konversi ke float dulu
-
+        json.dump({'total': float(total)}, f)  # 💡 Konversi aman
 
 def write_log(entry):
     with open(LOG_FILE, 'a') as f:
@@ -67,20 +66,17 @@ def send_telegram(msg):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     data = {"chat_id": CHAT_ID, "text": msg}
     try:
-        requests.post(url, data=data)
-        print(f"{Fore.GREEN}✅ Pesan Telegram terkirim")
+        res = requests.post(url, data=data)
+        if res.status_code == 200:
+            print(Fore.GREEN + "✅ Telegram terkirim")
+        else:
+            print(Fore.RED + f"❌ Telegram gagal: {res.text}")
     except Exception as e:
-        print(f"{Fore.RED}❌ Telegram error:", e)
-
-def get_wallet_name(address):
-    for wallet in WATCH_WALLETS:
-        if wallet['address'] == address.lower():
-            return wallet['name']
-    return "Unknown"
+        print(Fore.RED + f"❌ Telegram error: {e}")
 
 # === MONITORING ===
 last_block = web3.eth.block_number
-total_ita_received = 0  # RESET TIAP RUN
+total_ita_received = load_session_total()
 
 try:
     while True:
@@ -96,7 +92,7 @@ try:
                             if tx_to == wallet['address']:
                                 amount = web3.from_wei(tx.value, 'ether')
                                 timestamp = datetime.fromtimestamp(block.timestamp).strftime('%d/%m/%Y %H:%M:%S')
-                                total_ita_received += amount
+                                total_ita_received += float(amount)
 
                                 message = (
                                     f"🎉 ITA Masuk ke {wallet['name']}!\n\n"
@@ -108,30 +104,30 @@ try:
                                     f"💳 Address: {wallet['address'][:10]}...{wallet['address'][-6:]}"
                                 )
 
-                                print(f"{Fore.GREEN}📥 {wallet['name']} menerima {amount} ITA di blok {block_num}")
-                                print(f"{Fore.YELLOW}📊 Total sementara dari semua wallet: {total_ita_received:.6f} ITA\n")
+                                print(Fore.GREEN + f"📥 {wallet['name']} menerima {amount} ITA di blok {block_num}")
+                                print(Fore.YELLOW + f"📊 Total kumulatif: {total_ita_received:.6f} ITA\n")
 
                                 send_telegram(message)
                                 write_log(f"[{timestamp}] {wallet['name']} menerima {amount} ITA di blok {block_num}")
                                 save_session_total(total_ita_received)
                                 break
             except Exception as e:
-                print(f"{Fore.RED}❌ Error blok {block_num}:", e)
+                print(Fore.RED + f"❌ Error blok {block_num}: {e}")
                 continue
 
         last_block = latest_block
         time.sleep(10)
 
-        # Print monitoring status tiap 1 menit
+        # Status tiap menit
         if int(time.time()) % 60 == 0:
-            print(f"{Fore.CYAN}⏰ {datetime.now().strftime('%H:%M:%S')} - Monitoring aktif (Blok: {latest_block})")
+            print(Fore.CYAN + f"⏰ {datetime.now().strftime('%H:%M:%S')} - Monitoring aktif (Blok: {latest_block})")
 
 except KeyboardInterrupt:
-    print(f"\n🛑 Bot dihentikan.")
-    print(f"{Fore.YELLOW}📊 Total akhir selama sesi: {total_ita_received:.6f} ITA")
+    print(Fore.RED + "\n🛑 Bot dihentikan oleh pengguna.")
+    print(Fore.YELLOW + f"📊 Total ITA sesi ini: {total_ita_received:.6f} ITA")
     save_session_total(total_ita_received)
     write_log(f"[{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}] Bot dihentikan. Total: {total_ita_received:.6f} ITA")
 
 except Exception as e:
-    print(f"{Fore.RED}❌ Error fatal: {e}")
+    print(Fore.RED + f"❌ Error fatal: {e}")
     send_telegram(f"🚨 Bot Error!\n\n{e}")
