@@ -5,11 +5,91 @@ import requests
 from dotenv import load_dotenv
 import os
 import json
-from colorama import init, Fore
+from colorama import init, Fore, Style
 from decimal import Decimal
+import random
 
 init(autoreset=True)
 load_dotenv()
+
+# === ASCII ART FUNCTIONS ===
+def generate_random_chars(width=30, height=8):
+    """Generate random characters for background effect"""
+    chars = "!@#$%^&*()_+-=[]{}|;:,.<>?/~`"
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    numbers = "0123456789"
+    all_chars = chars + letters + numbers
+    
+    background = []
+    for _ in range(height):
+        line = ""
+        for _ in range(width):
+            if random.random() < 0.6:  # 60% chance for character
+                line += random.choice(all_chars)
+            else:
+                line += " "
+        background.append(line)
+    return background
+
+def display_motivation():
+    """Display motivational ASCII art"""
+    print("\033[2J\033[H", end="")  # Clear screen
+    
+    # Random background characters in red
+    background = generate_random_chars(35, 6)
+    for line in background:
+        print(Fore.RED + line)
+    
+    print()
+    
+    # Main motivational text
+    art = """
+██╗████████╗███████╗     ██████╗ ██╗  ██╗ █████╗ ██╗   ██╗
+██║╚══██╔══╝██╔════╝    ██╔═══██╗██║ ██╔╝██╔══██╗╚██╗ ██╔╝
+██║   ██║   ███████╗    ██║   ██║█████╔╝ ███████║ ╚████╔╝ 
+██║   ██║   ╚════██║    ██║   ██║██╔═██╗ ██╔══██║  ╚██╔╝  
+██║   ██║   ███████║    ╚██████╔╝██║  ██╗██║  ██║   ██║   
+╚═╝   ╚═╝   ╚══════╝     ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
+
+    ██╗   ██╗ ██████╗ ██╗   ██╗     ██████╗ █████╗ ███╗   ██╗
+    ╚██╗ ██╔╝██╔═══██╗██║   ██║    ██╔════╝██╔══██╗████╗  ██║
+     ╚████╔╝ ██║   ██║██║   ██║    ██║     ███████║██╔██╗ ██║
+      ╚██╔╝  ██║   ██║██║   ██║    ██║     ██╔══██║██║╚██╗██║
+       ██║   ╚██████╔╝╚██████╔╝    ╚██████╗██║  ██║██║ ╚████║
+       ╚═╝    ╚═════╝  ╚═════╝      ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
+
+        ██████╗  ██████╗     ██╗████████╗
+        ██╔══██╗██╔═══██╗    ██║╚══██╔══╝
+        ██║  ██║██║   ██║    ██║   ██║   
+        ██║  ██║██║   ██║    ██║   ██║   
+        ██████╔╝╚██████╔╝    ██║   ██║   
+        ╚═════╝  ╚═════╝     ╚═╝   ╚═╝   
+"""
+    
+    # Display art with colors
+    colors = [Fore.CYAN, Fore.GREEN, Fore.YELLOW, Fore.MAGENTA, Fore.WHITE]
+    art_lines = art.strip().split('\n')
+    
+    for i, line in enumerate(art_lines):
+        if line.strip():
+            color = colors[i % len(colors)]
+            print(color + Style.BRIGHT + line)
+        else:
+            print()
+    
+    print()
+    print(Fore.GREEN + Style.BRIGHT + "🚀 " + "="*60 + " 🚀")
+    print(Fore.YELLOW + Style.BRIGHT + "        Starting ITA Wallet Monitor - Keep Going! 💪")
+    print(Fore.GREEN + Style.BRIGHT + "🚀 " + "="*60 + " 🚀")
+    print()
+    
+    # Random background at bottom
+    bottom_bg = generate_random_chars(35, 4)
+    for line in bottom_bg:
+        print(Fore.RED + line)
+    
+    time.sleep(3)  # Show for 3 seconds
+    print("\033[2J\033[H", end="")  # Clear screen again
 
 # === ENVIRONMENT VARIABLES ===
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -18,6 +98,9 @@ RPC_URL = os.getenv('RPC_URL')
 WALLET1 = os.getenv('WALLET1')
 WALLET2 = os.getenv('WALLET2')
 WALLET3 = os.getenv('WALLET3')
+
+# Show motivation first
+display_motivation()
 
 if not all([TELEGRAM_TOKEN, CHAT_ID, RPC_URL, WALLET1]):
     print(Fore.RED + "❌ Error: .env file is incomplete!")
@@ -86,6 +169,18 @@ def send_telegram(msg):
     except Exception as e:
         print(Fore.RED + f"❌ Telegram error: {e}")
 
+def celebration_animation():
+    """Show celebration when ITA is received"""
+    celebration = [
+        "🎉 🎊 🎉 🎊 🎉 🎊 🎉 🎊 🎉",
+        "💰 ITA RECEIVED! AWESOME! 💰",
+        "🎉 🎊 🎉 🎊 🎉 🎊 🎉 🎊 🎉"
+    ]
+    
+    for line in celebration:
+        print(Fore.GREEN + Style.BRIGHT + line.center(50))
+    print()
+
 # === MONITORING ===
 last_block = web3.eth.block_number
 
@@ -117,6 +212,9 @@ try:
                                     timestamp = datetime.fromtimestamp(block.timestamp).strftime('%d/%m/%Y %H:%M:%S')
                                     total_ita_received += amount_float
 
+                                    # Show celebration animation
+                                    celebration_animation()
+
                                     message = (
                                         f"🎉 ITA Received in {wallet['name']}!\n\n"
                                         f"💰 Amount  : {amount_float:.6f} ITA\n"
@@ -142,22 +240,31 @@ try:
 
             last_block = latest_block
             
-            # Status every 60 seconds
+            # Status every 60 seconds with motivational messages
             current_time = int(time.time())
             if current_time % 60 == 0:
-                print(Fore.CYAN + f"⏰ {datetime.now().strftime('%H:%M:%S')} - Monitoring active (Block: {latest_block})")
+                motivational_messages = [
+                    "Stay strong! Monitoring is active 💪",
+                    "Keep going! You're doing great 🚀",
+                    "Patience pays off! Still watching 👀",
+                    "Never give up! Monitoring continues 💎",
+                    "You've got this! System running smooth ⚡"
+                ]
+                msg = random.choice(motivational_messages)
+                print(Fore.CYAN + f"⏰ {datetime.now().strftime('%H:%M:%S')} - {msg} (Block: {latest_block})")
                 time.sleep(1)  # Prevent multiple prints in the same second
             
             time.sleep(10)
             
         except requests.exceptions.RequestException as e:
             print(Fore.RED + f"❌ RPC Connection error: {e}")
-            print(Fore.YELLOW + "🔄 Trying to reconnect in 30 seconds...")
+            print(Fore.YELLOW + "🔄 Don't worry! Trying to reconnect in 30 seconds... 💪")
             time.sleep(30)
             continue
             
         except Exception as e:
             print(Fore.RED + f"❌ Unexpected error: {e}")
+            print(Fore.YELLOW + "🔄 No problem! Recovering in 5 seconds... 🚀")
             time.sleep(5)
             continue
 
@@ -166,11 +273,19 @@ except KeyboardInterrupt:
     print(Fore.YELLOW + f"📊 Total ITA this session: {total_ita_received:.6f} ITA")
     save_session_total(total_ita_received)
     write_log(f"[{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}] Bot stopped. Total: {total_ita_received:.6f} ITA")
-    print(Fore.GREEN + "✅ Session data saved. Thank you!")
+    
+    # Final motivation
+    print(Fore.GREEN + Style.BRIGHT + "\n🌟 " + "="*50 + " 🌟")
+    print(Fore.CYAN + Style.BRIGHT + "  Thank you for using ITA Monitor!")
+    print(Fore.YELLOW + Style.BRIGHT + "  Remember: Success comes to those who persist!")
+    print(Fore.MAGENTA + Style.BRIGHT + "  Keep coding, keep dreaming! 🚀💎")
+    print(Fore.GREEN + Style.BRIGHT + "🌟 " + "="*50 + " 🌟")
+    print(Fore.GREEN + "✅ Session data saved. See you next time! 👋")
 
 except Exception as e:
     error_msg = f"🚨 Bot Fatal Error!\n\n{str(e)}"
     print(Fore.RED + f"❌ Fatal error: {e}")
+    print(Fore.YELLOW + "💪 Don't give up! This is just a temporary setback!")
     save_session_total(total_ita_received)
     send_telegram(error_msg)
     write_log(f"[{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}] Bot fatal error: {e}")
