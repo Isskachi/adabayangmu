@@ -46,15 +46,17 @@ print(Fore.CYAN + "🚀 Monitoring started...\n")
 LOG_FILE = "ita_log.txt"
 SESSION_FILE = "ita_session.json"
 
-def load_session_total():
-    if os.path.exists(SESSION_FILE):
-        try:
-            with open(SESSION_FILE, 'r') as f:
-                return float(json.load(f).get('total', 0))
-        except Exception as e:
-            print(Fore.YELLOW + f"⚠️ Warning: Failed to load session file: {e}")
-            return 0.0
-    return 0.0
+# Reset cumulative total to 0 on every restart
+def reset_session_total():
+    """Reset cumulative total to 0 and save to file"""
+    try:
+        with open(SESSION_FILE, 'w') as f:
+            json.dump({'total': 0.0}, f)
+        print(Fore.YELLOW + "🔄 Cumulative total has been reset to 0")
+        return 0.0
+    except Exception as e:
+        print(Fore.YELLOW + f"⚠️ Warning: Failed to reset session file: {e}")
+        return 0.0
 
 def save_session_total(total):
     try:
@@ -86,7 +88,9 @@ def send_telegram(msg):
 
 # === MONITORING ===
 last_block = web3.eth.block_number
-total_ita_received = load_session_total()
+
+# AUTO RESET: Start with 0 on every restart
+total_ita_received = reset_session_total()
 
 print(Fore.CYAN + f"📊 Current cumulative total: {total_ita_received:.6f} ITA")
 print(Fore.CYAN + f"🔍 Starting monitoring from block: {last_block}")
